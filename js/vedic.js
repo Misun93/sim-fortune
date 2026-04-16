@@ -116,83 +116,77 @@ function parseNakshatraName(data) {
 const PLANETS = ['Sun','Moon','Mars','Mercury','Jupiter','Venus','Saturn','Rahu','Ketu'];
 
 // 메인 베딕 계산 함수
+// API 응답이 rate limit 오류인지 확인
+function isRateLimit(data) {
+  const p = data?.Payload;
+  return typeof p === 'string' && p.includes('rate limit');
+}
+
 export async function calculate(year, month, day, hour, minute, lat, lng, onProgress) {
   const tzOffset = getTimezoneOffset(lat, lng);
   const timeStr = formatVedAstroTime(year, month, day, hour, minute, tzOffset);
   const locStr = `${lat.toFixed(4)},${lng.toFixed(4)}`;
 
-  const total = PLANETS.length + 2; // planets + lagna + nakshatra
-  let done = 0;
-
+  // 폴백으로 행성 초기값 채우기 (rate limit 대비)
+  const fallback = calculateFallback(year, month, day, hour, minute, lat, lng);
   const result = {
-    planets: {},
-    lagnaSign: null,
-    lagnaSignIndex: null,
+    planets: { ...fallback.planets },
+    lagnaSign: fallback.lagnaSign,
+    lagnaSignIndex: fallback.lagnaSignIndex,
     moonNakshatra: null,
     moonNakshatraIndex: null,
     lat, lng, tzOffset,
   };
 
-  onProgress?.(0, total, '라그나 계산 중...');
-
-  // 1. 라그나 (상승궁)
+  // 핵심 3개만 API 호출 (분당 5회 제한 준수)
+  // 1. 라그나
+  onProgress?.(0, 3, '라그나 계산 중...');
   try {
     const lagnaData = await fetchVedAstro(
       `LagnaSignName/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
     );
-    const signName = parseSignName(lagnaData);
-    if (signName) {
-      result.lagnaSign = signName;
-      result.lagnaSignIndex = SIGN_INDEX[signName] ?? 0;
-    }
-  } catch (e) {
-    console.warn('라그나 계산 실패:', e);
-  }
-  done++;
-  onProgress?.(done, total, '행성 위치 계산 중...');
-  await delay(300);
-
-  // 2. 행성 라시
-  for (const planet of PLANETS) {
-    try {
-      const data = await fetchVedAstro(
-        `PlanetRasiD1Sign/PlanetName/${planet}/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
-      );
-      const signName = parseSignName(data);
+    if (!isRateLimit(lagnaData)) {
+      const signName = parseSignName(lagnaData);
       if (signName) {
-        result.planets[planet] = {
-          sign: signName,
-          signIndex: SIGN_INDEX[signName] ?? 0,
-          isRetrograde: false,
-        };
+        result.lagnaSign = signName;
+        result.lagnaSignIndex = SIGN_INDEX[signName] ?? 0;
       }
-    } catch (e) {
-      console.warn(`${planet} 계산 실패:`, e);
-      result.planets[planet] = { sign: 'Unknown', signIndex: 0, isRetrograde: false };
     }
-    done++;
-    onProgress?.(done, total, `${planet} 계산 완료...`);
-    await delay(300); // rate limit 준수
-  }
+  } catch (e) { console.warn('라그나 계산 실패:', e); }
+  await delay(13000); // 분당 5회 제한: 13초 간격
 
-  // 3. 달의 낙샤트라 (올바른 엔드포인트: PlanetConstellation)
+  // 2. 달 위치
+  onProgress?.(1, 3, '달 위치 계산 중...');
   try {
-    const nakshatraData = await fetchVedAstro(
+    const moonData = await fetchVedAstro(
+      `PlanetRasiD1Sign/PlanetName/Moon/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
+    );
+    if (!isRateLimit(moonData)) {
+      const signName = parseSignName(moonData);
+      if (signName) {
+        result.planets['Moon'] = { sign: signName, signIndex: SIGN_INDEX[signName] ?? 0, isRetrograde: false };
+      }
+    }
+  } catch (e) { console.warn('달 계산 실패:', e); }
+  await delay(13000);
+
+  // 3. 달 낙샤트라
+  onProgress?.(2, 3, '낙샤트라 계산 중...');
+  try {
+    const nakData = await fetchVedAstro(
       `PlanetConstellation/PlanetName/Moon/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
     );
-    const nakshatraName = parseNakshatraName(nakshatraData);
-    if (nakshatraName) {
-      // "Swathi - 1" 형식에서 이름만 추출
-      const cleanName = nakshatraName.split(' - ')[0].trim().replace(/\s+/g, '');
-      result.moonNakshatra = cleanName;
-      result.moonNakshatraIndex = NAKSHATRA_INDEX[cleanName] ?? null;
+    if (!isRateLimit(nakData)) {
+      const raw = nakData?.Payload?.PlanetConstellation ?? parseNakshatraName(nakData);
+      if (raw && typeof raw === 'string') {
+        const cleanName = raw.split(' - ')[0].trim().replace(/\s+/g, '');
+        result.moonNakshatra = cleanName;
+        result.moonNakshatraIndex = NAKSHATRA_INDEX[cleanName] ?? null;
+      }
     }
-  } catch (e) {
-    console.warn('낙샤트라 계산 실패:', e);
-  }
-  done++;
-  onProgress?.(done, total, '완료');
+  } catch (e) { console.warn('낙샤트라 계산 실패:', e); }
 
+  onProgress?.(3, 3, '완료');
   return result;
 }
 
