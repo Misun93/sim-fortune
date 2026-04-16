@@ -138,56 +138,49 @@ export async function calculate(year, month, day, hour, minute, lat, lng, onProg
     lat, lng, tzOffset,
   };
 
-  // 핵심 3개만 API 호출 (분당 5회 제한 준수)
-  // 1. 라그나
-  onProgress?.(0, 3, '라그나 계산 중...');
-  try {
-    const lagnaData = await fetchVedAstro(
-      `LagnaSignName/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
-    );
-    if (!isRateLimit(lagnaData)) {
-      const signName = parseSignName(lagnaData);
-      if (signName) {
-        result.lagnaSign = signName;
-        result.lagnaSignIndex = SIGN_INDEX[signName] ?? 0;
-      }
-    }
-  } catch (e) { console.warn('라그나 계산 실패:', e); }
-  await delay(13000); // 분당 5회 제한: 13초 간격
-
-  // 2. 달 위치
-  onProgress?.(1, 3, '달 위치 계산 중...');
-  try {
-    const moonData = await fetchVedAstro(
-      `PlanetRasiD1Sign/PlanetName/Moon/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
-    );
-    if (!isRateLimit(moonData)) {
-      const signName = parseSignName(moonData);
-      if (signName) {
-        result.planets['Moon'] = { sign: signName, signIndex: SIGN_INDEX[signName] ?? 0, isRetrograde: false };
-      }
-    }
-  } catch (e) { console.warn('달 계산 실패:', e); }
-  await delay(13000);
-
-  // 3. 달 낙샤트라
-  onProgress?.(2, 3, '낙샤트라 계산 중...');
-  try {
-    const nakData = await fetchVedAstro(
-      `PlanetConstellation/PlanetName/Moon/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
-    );
-    if (!isRateLimit(nakData)) {
-      const raw = nakData?.Payload?.PlanetConstellation ?? parseNakshatraName(nakData);
-      if (raw && typeof raw === 'string') {
-        const cleanName = raw.split(' - ')[0].trim().replace(/\s+/g, '');
-        result.moonNakshatra = cleanName;
-        result.moonNakshatraIndex = NAKSHATRA_INDEX[cleanName] ?? null;
-      }
-    }
-  } catch (e) { console.warn('낙샤트라 계산 실패:', e); }
-
   onProgress?.(3, 3, '완료');
   return result;
+}
+
+// 백그라운드에서 핵심 3개 API 업데이트 (rate limit 준수, 결과 반영 콜백)
+export async function fetchApiUpdate(year, month, day, hour, minute, lat, lng, onUpdate) {
+  const tzOffset = getTimezoneOffset(lat, lng);
+  const timeStr = formatVedAstroTime(year, month, day, hour, minute, tzOffset);
+  const locStr = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+
+  async function tryFetch(endpoint) {
+    try {
+      const data = await fetchVedAstro(`${endpoint}/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`);
+      if (isRateLimit(data)) return null;
+      return data;
+    } catch { return null; }
+  }
+
+  // 라그나
+  const lagnaData = await tryFetch('LagnaSignName');
+  if (lagnaData) {
+    const sign = parseSignName(lagnaData);
+    if (sign) onUpdate({ lagnaSign: sign, lagnaSignIndex: SIGN_INDEX[sign] ?? 0 });
+  }
+  await delay(13000);
+
+  // 달
+  const moonData = await tryFetch('PlanetRasiD1Sign/PlanetName/Moon');
+  if (moonData) {
+    const sign = parseSignName(moonData);
+    if (sign) onUpdate({ moonSign: sign, moonSignIndex: SIGN_INDEX[sign] ?? 0 });
+  }
+  await delay(13000);
+
+  // 낙샤트라
+  const nakData = await tryFetch('PlanetConstellation/PlanetName/Moon');
+  if (nakData) {
+    const raw = nakData?.Payload?.PlanetConstellation ?? parseNakshatraName(nakData);
+    if (raw && typeof raw === 'string') {
+      const name = raw.split(' - ')[0].trim().replace(/\s+/g, '');
+      onUpdate({ moonNakshatra: name, moonNakshatraIndex: NAKSHATRA_INDEX[name] ?? null });
+    }
+  }
 }
 
 // ===== 오프라인 폴백: 간략 계산 =====

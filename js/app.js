@@ -185,32 +185,30 @@ async function renderVedicPanel(year, month, day, hour, minute, locationInput) {
     $('vedic-disclaimer').setAttribute('hidden', '');
   }
 
-  // 진행 상황 표시
-  const progressEl = document.createElement('p');
-  progressEl.style.cssText = 'font-size:0.78rem;color:var(--text-muted);text-align:center;margin-top:0.5rem;';
-  chartContainer.appendChild(progressEl);
-
-  let vedicResult;
-  try {
-    vedicResult = await Vedic.calculate(year, month, day, hour, minute, lat, lng, (done, total, msg) => {
-      progressEl.textContent = `${msg} (${done}/${total})`;
-    });
-  } catch (err) {
-    console.warn('VedAstro API 실패, 폴백 사용:', err);
-    vedicResult = Vedic.calculateFallback(year, month, day, hour, minute, lat, lng);
-  }
-
+  // 폴백으로 즉시 렌더링
+  const vedicResult = Vedic.calculateFallback(year, month, day, hour, minute, lat, lng);
   State.vedicResult = vedicResult;
 
   // 차트 렌더링
   chartContainer.innerHTML = '';
   renderVedicChart(chartContainer, vedicResult);
-
   renderVedicPlanetTable($('vedic-planet-table'), vedicResult);
 
   const interpEl = $('vedic-interpretation');
   interpEl.innerHTML = Vedic.getInterpretationText(vedicResult);
   interpEl.removeAttribute('hidden');
+
+  // 백그라운드에서 API 정밀값으로 조용히 업데이트
+  Vedic.fetchApiUpdate(year, month, day, hour, minute, lat, lng, (patch) => {
+    if (patch.lagnaSign)     { vedicResult.lagnaSign = patch.lagnaSign; vedicResult.lagnaSignIndex = patch.lagnaSignIndex; }
+    if (patch.moonSign)      { vedicResult.planets['Moon'] = { sign: patch.moonSign, signIndex: patch.moonSignIndex, isRetrograde: false }; }
+    if (patch.moonNakshatra) { vedicResult.moonNakshatra = patch.moonNakshatra; vedicResult.moonNakshatraIndex = patch.moonNakshatraIndex; }
+    State.vedicResult = vedicResult;
+    // 해석 텍스트만 업데이트
+    interpEl.innerHTML = Vedic.getInterpretationText(vedicResult);
+    renderVedicChart(chartContainer, vedicResult);
+    renderVedicPlanetTable($('vedic-planet-table'), vedicResult);
+  });
 }
 
 // ===== 스켈레톤 표시 =====
