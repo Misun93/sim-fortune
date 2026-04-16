@@ -39,10 +39,16 @@ document.addEventListener('DOMContentLoaded', () => {
     $('input-model').value = State.model;
   }
 
-  // 오늘 날짜 기본값
-  const today = new Date();
-  $('input-date').value = today.toISOString().split('T')[0];
-  $('input-time').value = '12:00';
+  // 마지막 입력값 복원 (없으면 오늘 날짜 기본값)
+  const saved = JSON.parse(localStorage.getItem('birth_form') || '{}');
+  $('input-date').value   = saved.date     || new Date().toISOString().split('T')[0];
+  $('input-time').value   = saved.time     || '12:00';
+  $('input-name').value   = saved.name     || '';
+  $('input-location').value = saved.location || '';
+  if (saved.gender) {
+    const radioEl = document.querySelector(`input[name="gender"][value="${saved.gender}"]`);
+    if (radioEl) radioEl.checked = true;
+  }
 
   // 이벤트 바인딩
   form.addEventListener('submit', onCalculate);
@@ -71,6 +77,9 @@ async function onCalculate(e) {
   const [hour, minute] = timeVal.split(':').map(Number);
 
   State.birthInfo = { name, date: dateVal, time: timeVal, year, month, day, hour, minute, gender };
+
+  // 입력값 저장 (다음 방문 시 복원)
+  localStorage.setItem('birth_form', JSON.stringify({ date: dateVal, time: timeVal, name, gender, location: locationInput }));
 
   // 패널 표시
   panelsGrid.removeAttribute('hidden');
