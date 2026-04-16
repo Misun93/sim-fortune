@@ -307,30 +307,22 @@ function parsePillar(hanja) {
   };
 }
 
-// manseryeok 라이브러리 동적 로드 (첫 계산 시점에만 로드)
-let manseryeokReady = null;
-function loadManseryeok() {
-  if (manseryeokReady) return manseryeokReady;
-  if (window.manseryeok?.calculateSaju) {
-    manseryeokReady = Promise.resolve();
-    return manseryeokReady;
-  }
-  manseryeokReady = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@fullstackfamily/manseryeok@1.0.8/dist/index.js';
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('manseryeok CDN 로드 실패'));
-    document.head.appendChild(s);
-  });
-  return manseryeokReady;
+// manseryeok ES모듈 동적 import (첫 계산 시점에만 로드)
+let _manseryeok = null;
+async function loadManseryeok() {
+  if (_manseryeok) return _manseryeok;
+  const mod = await import('https://cdn.jsdelivr.net/npm/@fullstackfamily/manseryeok@1.0.8/dist/index.mjs');
+  _manseryeok = mod;
+  return _manseryeok;
 }
 
 // ===== 메인 계산 함수 (manseryeok 라이브러리 사용) =====
 export async function calculate(year, month, day, hour, minute, gender, longitude = 126.978) {
-  await loadManseryeok();
-  const lib = window.manseryeok;
+  const mod = await loadManseryeok();
+  // ESM default export 또는 named export 모두 처리
+  const lib = mod.default || mod;
   if (!lib || !lib.calculateSaju) {
-    throw new Error('manseryeok 라이브러리가 로드되지 않았습니다.');
+    throw new Error('manseryeok 라이브러리를 불러올 수 없습니다.');
   }
 
   const raw = lib.calculateSaju(year, month, day, hour, minute, { longitude });
