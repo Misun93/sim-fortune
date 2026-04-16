@@ -115,24 +115,41 @@ function getMingGongIndex(lunarMonth, hourIndex) {
   return idx;
 }
 
+// ===== 납음오행 30쌍 테이블 (전통 60갑자 납음, 쌍 인덱스 0~29) =====
+// 甲子乙丑=海中金, 丙寅丁卯=爐中火, 戊辰己巳=大林木, 庚午辛未=路傍土, 壬申癸酉=劍鋒金,
+// 甲戌乙亥=山頭火, 丙子丁丑=澗下水, 戊寅己卯=城頭土, 庚辰辛巳=白蠟金, 壬午癸未=楊柳木,
+// 甲申乙酉=泉中水, 丙戌丁亥=屋上土, 戊子己丑=霹靂火, 庚寅辛卯=松柏木, 壬辰癸巳=長流水,
+// 甲午乙未=砂中金, 丙申丁酉=山下火, 戊戌己亥=平地木, 庚子辛丑=壁上土, 壬寅癸卯=金箔金,
+// 甲辰乙巳=覆燈火, 丙午丁未=天河水, 戊申己酉=大驛土, 庚戌辛亥=釵釧金, 壬子癸丑=桑柘木,
+// 甲寅乙卯=大溪水, 丙辰丁巳=沙中土, 戊午己未=天上火, 庚申辛酉=石榴木, 壬戌癸亥=大海水
+const NAYIN_30 = [
+  '금','화','목','토','금','화','수','토','금','목',
+  '수','토','화','목','수','금','화','목','토','금',
+  '화','수','토','금','목','수','토','화','목','수',
+];
+
+// 60갑자 인덱스 계산 (천간 0~9, 지지 子=0 기준 0~11)
+function calcGanzhi60(stemIdx, branchZiIdx) {
+  // n ≡ stemIdx (mod 10), n ≡ branchZiIdx (mod 12) → 5의 역원(mod 6)=5
+  const k = ((5 * ((branchZiIdx - stemIdx) / 2)) % 6 + 6) % 6;
+  return stemIdx + 10 * k;
+}
+
 // ===== 오행국수 (납음오행으로 결정) =====
 function getBureauNumber(lunarYear, mingGongIndex) {
-  // 명궁의 천간 계산: 년간과 명궁 지지로 납음오행 결정
-  // 년간 기준 인(寅)월 천간
   const yearStemIdx = ((lunarYear - 4) % 10 + 10) % 10;
-  // 명궁 지지 인덱스 (寅=0 기준)
-  const branchInZi = (mingGongIndex + 2) % 12; // 寅=2(자시 기준)
-  // 천간: 甲己년-寅=丙(2), 乙庚년-寅=戊(4), 丙辛년-寅=庚(6), 丁壬년-寅=壬(8), 戊癸년-寅=甲(0)
+  // 甲己년→寅=丙(2), 乙庚→戊(4), 丙辛→庚(6), 丁壬→壬(8), 戊癸→甲(0)
   const monthStemStarts = [2, 4, 6, 8, 0];
   const monthStemStart = monthStemStarts[yearStemIdx % 5];
   const mingGongStemIdx = (monthStemStart + mingGongIndex) % 10;
+  // 명궁 지지 (子=0 기준): 寅=2
+  const branchZi = (mingGongIndex + 2) % 12;
 
-  // 60갑자 인덱스
-  const ganzhi60 = mingGongStemIdx * 2 + Math.floor(branchInZi / 6);
-  const nayinElement = NAYIN_ELEMENTS[ganzhi60 % 30 * 2] || '土'; // 근사값
+  // 올바른 60갑자 인덱스 → 납음쌍 번호
+  const ganzhi60Idx = calcGanzhi60(mingGongStemIdx, branchZi);
+  const nayinPairIdx = Math.floor(ganzhi60Idx / 2);
+  const nayinElement = NAYIN_30[nayinPairIdx] || '토';
 
-  // 납음오행 결정 (명궁 간지 기준)
-  // 간단화: 년간과 명궁 지지의 납음으로 결정
   const bureau = ELEMENT_TO_BUREAU[nayinElement] || 5;
   return { bureau, nayinElement };
 }

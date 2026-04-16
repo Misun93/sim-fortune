@@ -175,15 +175,17 @@ export async function calculate(year, month, day, hour, minute, lat, lng, onProg
     await delay(300); // rate limit 준수
   }
 
-  // 3. 달의 낙샤트라
+  // 3. 달의 낙샤트라 (올바른 엔드포인트: PlanetConstellation)
   try {
     const nakshatraData = await fetchVedAstro(
-      `PlanetNakshatra/PlanetName/Moon/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
+      `PlanetConstellation/PlanetName/Moon/Location/${locStr}/Time/${timeStr}/Ayanamsa/LAHIRI`
     );
     const nakshatraName = parseNakshatraName(nakshatraData);
     if (nakshatraName) {
-      result.moonNakshatra = nakshatraName;
-      result.moonNakshatraIndex = NAKSHATRA_INDEX[nakshatraName] ?? null;
+      // "Swathi - 1" 형식에서 이름만 추출
+      const cleanName = nakshatraName.split(' - ')[0].trim().replace(/\s+/g, '');
+      result.moonNakshatra = cleanName;
+      result.moonNakshatraIndex = NAKSHATRA_INDEX[cleanName] ?? null;
     }
   } catch (e) {
     console.warn('낙샤트라 계산 실패:', e);

@@ -287,17 +287,45 @@ function getDaeun(yearStemIdx, monthStemIdx, monthBranchIdx, startAge, isForward
   return daeun;
 }
 
-// ===== 메인 계산 함수 =====
-export function calculate(year, month, day, hour, minute, gender) {
-  const yearPillar = getYearPillar(year, month, day);
-  const monthIdx = getMonthIndex(year, month, day);
-  const monthPillar = getMonthPillar(yearPillar.stemIndex, monthIdx);
-  const dayPillar = getDayPillar(year, month, day);
-  const hourPillar = getHourPillar(dayPillar.stemIndex, hour);
+// ===== 한자 2글자 → 주柱 객체 파싱 =====
+function parsePillar(hanja) {
+  const stem = hanja[0];
+  const branch = hanja[1];
+  const stemIndex = STEMS.indexOf(stem);
+  const branchIndex = BRANCHES.indexOf(branch);
+  return {
+    stemIndex,
+    branchIndex,
+    stem,
+    stemKo: STEMS_KO[stemIndex],
+    branch,
+    branchKo: BRANCHES_KO[branchIndex],
+    element: STEM_ELEMENT[stemIndex],
+    branchElement: BRANCH_ELEMENT[branchIndex],
+    yinYang: STEM_YY[stemIndex],
+    idx60: stemIndex + branchIndex * 10, // 참고용
+  };
+}
+
+// ===== 메인 계산 함수 (manseryeok 라이브러리 사용) =====
+export function calculate(year, month, day, hour, minute, gender, longitude = 126.978) {
+  const lib = window.manseryeok;
+  if (!lib || !lib.calculateSaju) {
+    throw new Error('manseryeok 라이브러리가 로드되지 않았습니다. 페이지를 새로고침 해주세요.');
+  }
+
+  const raw = lib.calculateSaju(year, month, day, hour, minute, { longitude });
+
+  const yearPillar  = parsePillar(raw.yearPillarHanja  || raw.yearPillar);
+  const monthPillar = parsePillar(raw.monthPillarHanja || raw.monthPillar);
+  const dayPillar   = parsePillar(raw.dayPillarHanja   || raw.dayPillar);
+  const hourPillar  = parsePillar(raw.hourPillarHanja  || raw.hourPillar);
 
   const pillars = [yearPillar, monthPillar, dayPillar, hourPillar];
   const wuxing = getWuxingBalance(pillars);
 
+  // 대운: manseryeok이 제공하지 않으므로 기존 절기 로직 유지
+  const monthIdx = getMonthIndex(year, month, day);
   const { startAge, isForward } = calcDaeunStartAge(
     year, month, day, gender, yearPillar.stemIndex, monthIdx
   );
