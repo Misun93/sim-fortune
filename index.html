@@ -130,6 +130,53 @@
 
 </main>
 
+<!-- ===== 운세 섹션 ===== -->
+<section class="fortune-section" id="fortune-section" hidden>
+  <div class="fortune-section-inner">
+    <div class="fortune-header">
+      <h3>☯ 운세 풀이</h3>
+      <p class="fortune-subtitle">사주 일간 기준 십신(十神) 오행 분석</p>
+    </div>
+    <div class="fortune-tabs">
+      <button class="fortune-tab active" data-tab="today">오늘 운세</button>
+      <button class="fortune-tab" data-tab="date">날짜 선택</button>
+      <button class="fortune-tab" data-tab="year">연간 운세</button>
+      <button class="fortune-tab" data-tab="daeun">대운</button>
+      <button class="fortune-tab" data-tab="love">연애운</button>
+    </div>
+    <div class="fortune-tab-content">
+      <!-- 오늘 운세 -->
+      <div class="fortune-pane active" id="fortune-pane-today">
+        <div id="fortune-today-result"></div>
+      </div>
+      <!-- 날짜 선택 -->
+      <div class="fortune-pane" id="fortune-pane-date">
+        <div class="fortune-date-picker">
+          <input type="date" id="fortune-input-date" />
+          <button class="btn-fortune-calc" id="btn-fortune-date">운세 보기</button>
+        </div>
+        <div id="fortune-date-result"></div>
+      </div>
+      <!-- 연간 운세 -->
+      <div class="fortune-pane" id="fortune-pane-year">
+        <div class="fortune-date-picker">
+          <select id="fortune-input-year"></select>
+          <button class="btn-fortune-calc" id="btn-fortune-year">운세 보기</button>
+        </div>
+        <div id="fortune-year-result"></div>
+      </div>
+      <!-- 대운 -->
+      <div class="fortune-pane" id="fortune-pane-daeun">
+        <div id="fortune-daeun-result"></div>
+      </div>
+      <!-- 연애운 -->
+      <div class="fortune-pane" id="fortune-pane-love">
+        <div id="fortune-love-result"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ===== AI ANALYSIS ===== -->
 <section class="ai-section" id="ai-section" hidden>
   <div class="ai-section-inner">

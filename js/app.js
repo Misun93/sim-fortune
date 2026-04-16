@@ -6,6 +6,7 @@
 import * as Bazi from './bazi.js';
 import * as Zwds from './zwds.js';
 import * as Vedic from './vedic.js';
+import * as Fortune from './fortune.js';
 import { analyzeWithAI, markdownToHtml } from './ai.js';
 import {
   renderBaziChart, renderWuxingBars, renderDaeunTable,
@@ -111,6 +112,9 @@ async function onCalculate(e) {
 
     // AI 버튼 활성화
     enableAIButton();
+
+    // 운세 섹션 표시
+    renderFortuneSection();
 
   } catch (err) {
     console.error('계산 오류:', err);
@@ -315,4 +319,70 @@ function saveSettings() {
 
 function showError(msg) {
   console.error(msg);
+}
+
+// ===== 운세 섹션 =====
+function renderFortuneSection() {
+  const section = $('fortune-section');
+  section.removeAttribute('hidden');
+
+  // 연도 선택 옵션 채우기
+  const yearSelect = $('fortune-input-year');
+  if (!yearSelect.options.length) {
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear - 2; y <= currentYear + 5; y++) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = `${y}년`;
+      if (y === currentYear) opt.selected = true;
+      yearSelect.appendChild(opt);
+    }
+  }
+
+  // 날짜 입력 기본값: 오늘
+  const today = new Date();
+  $('fortune-input-date').value = today.toISOString().split('T')[0];
+
+  // 오늘 운세 즉시 렌더링
+  $('fortune-today-result').innerHTML = Fortune.renderFortune(
+    Fortune.getTodayFortune(State.baziResult), 'today'
+  );
+
+  // 대운 즉시 렌더링
+  $('fortune-daeun-result').innerHTML = Fortune.renderDaeunFortune(
+    Fortune.getDaeunFortune(State.baziResult, State.birthInfo.year)
+  );
+
+  // 연애운 즉시 렌더링
+  $('fortune-love-result').innerHTML = Fortune.renderLoveFortune(
+    Fortune.getLoveFortune(State.baziResult, State.zwdsResult)
+  );
+
+  // 탭 전환
+  document.querySelectorAll('.fortune-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.fortune-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.fortune-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      $(`fortune-pane-${tab.dataset.tab}`).classList.add('active');
+    });
+  });
+
+  // 날짜 선택 운세
+  $('btn-fortune-date').addEventListener('click', () => {
+    const val = $('fortune-input-date').value;
+    if (!val) return;
+    const [y, m, d] = val.split('-').map(Number);
+    $('fortune-date-result').innerHTML = Fortune.renderFortune(
+      Fortune.getDateFortune(State.baziResult, y, m, d), 'date'
+    );
+  });
+
+  // 연간 운세
+  $('btn-fortune-year').addEventListener('click', () => {
+    const y = parseInt($('fortune-input-year').value);
+    $('fortune-year-result').innerHTML = Fortune.renderFortune(
+      Fortune.getYearFortune(State.baziResult, y), 'year'
+    );
+  });
 }

@@ -864,6 +864,184 @@ input:focus, select:focus {
   color: #f87171;
 }
 
+/* ========== 운세 섹션 ========== */
+.fortune-section {
+  max-width: 1400px;
+  margin: 0 auto 2rem;
+  padding: 0 1.5rem;
+}
+
+.fortune-section-inner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-glow);
+}
+
+.fortune-header { text-align: center; margin-bottom: 1.5rem; }
+.fortune-header h3 { font-size: 1.2rem; color: var(--accent-gold); letter-spacing: 0.05em; }
+.fortune-subtitle { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+.fortune-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 1rem;
+}
+
+.fortune-tab {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 0.45rem 1.1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.fortune-tab:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+.fortune-tab.active {
+  background: rgba(201,168,76,0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.fortune-pane { display: none; }
+.fortune-pane.active { display: block; }
+
+.fortune-date-picker {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.fortune-date-picker input,
+.fortune-date-picker select {
+  flex: 1;
+  min-width: 140px;
+}
+
+.btn-fortune-calc {
+  background: linear-gradient(135deg, #7b2d8b, #5a1f68);
+  border: 1px solid var(--accent-purple-light);
+  color: #fff;
+  padding: 0.55rem 1.2rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.btn-fortune-calc:hover { box-shadow: 0 0 15px rgba(123,45,139,0.4); }
+
+/* 운세 결과 */
+.fortune-result { display: flex; flex-direction: column; gap: 1rem; }
+
+.fortune-ganzhi-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fortune-ganzhi-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  min-width: 80px;
+}
+
+.fortune-ganzhi-label { font-size: 0.7rem; color: var(--text-muted); }
+.fortune-ganzhi-char { font-size: 1.4rem; font-family: serif; line-height: 1.2; }
+.fortune-sipshin { font-size: 0.8rem; font-weight: 700; }
+
+.fortune-main-sipshin {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+}
+
+.fortune-sipshin-icon { font-size: 1.5rem; flex-shrink: 0; }
+.fortune-sipshin-name { font-size: 1rem; font-weight: 700; display: block; margin-bottom: 0.25rem; }
+.fortune-sipshin-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin: 0; }
+
+.fortune-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 600px) { .fortune-detail-grid { grid-template-columns: 1fr; } }
+
+.fortune-detail-item {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.fortune-detail-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.fortune-detail-item p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.fortune-strength-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.75rem;
+}
+
+.fortune-daeun-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+}
+
+.fortune-daeun-pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.fortune-daeun-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.fortune-daeun-info p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+
 /* ========== SCROLLBAR ========== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
