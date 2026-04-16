@@ -98,6 +98,7 @@ async function onCalculate(e) {
 
   try {
     // 1. 사주 계산 (manseryeok 동적 로드 후 계산)
+    btnCalc.querySelector('.btn-text').textContent = '사주 계산 중...';
     State.baziResult = await Bazi.calculate(year, month, day, hour, minute, gender);
     renderBaziPanel(State.baziResult);
 
@@ -113,7 +114,10 @@ async function onCalculate(e) {
 
   } catch (err) {
     console.error('계산 오류:', err);
-    showError('계산 중 오류가 발생했습니다: ' + err.message);
+    // 스켈레톤 자리에 에러 표시
+    for (const id of ['bazi-chart-container', 'zwds-chart-container', 'vedic-chart-container']) {
+      $(id).innerHTML = `<p style="color:#ef5350;padding:1rem;">⚠ 오류: ${err.message}</p>`;
+    }
   } finally {
     btnCalc.disabled = false;
     btnCalc.querySelector('.btn-text').textContent = '운명 분석하기';
