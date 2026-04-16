@@ -307,11 +307,30 @@ function parsePillar(hanja) {
   };
 }
 
+// manseryeok 라이브러리 동적 로드 (첫 계산 시점에만 로드)
+let manseryeokReady = null;
+function loadManseryeok() {
+  if (manseryeokReady) return manseryeokReady;
+  if (window.manseryeok?.calculateSaju) {
+    manseryeokReady = Promise.resolve();
+    return manseryeokReady;
+  }
+  manseryeokReady = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@fullstackfamily/manseryeok@1.0.8/dist/index.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('manseryeok CDN 로드 실패'));
+    document.head.appendChild(s);
+  });
+  return manseryeokReady;
+}
+
 // ===== 메인 계산 함수 (manseryeok 라이브러리 사용) =====
-export function calculate(year, month, day, hour, minute, gender, longitude = 126.978) {
+export async function calculate(year, month, day, hour, minute, gender, longitude = 126.978) {
+  await loadManseryeok();
   const lib = window.manseryeok;
   if (!lib || !lib.calculateSaju) {
-    throw new Error('manseryeok 라이브러리가 로드되지 않았습니다. 페이지를 새로고침 해주세요.');
+    throw new Error('manseryeok 라이브러리가 로드되지 않았습니다.');
   }
 
   const raw = lib.calculateSaju(year, month, day, hour, minute, { longitude });

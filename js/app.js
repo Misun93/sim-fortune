@@ -97,8 +97,8 @@ async function onCalculate(e) {
   showSkeletons();
 
   try {
-    // 1. 사주 계산 (동기)
-    State.baziResult = Bazi.calculate(year, month, day, hour, minute, gender);
+    // 1. 사주 계산 (manseryeok 동적 로드 후 계산)
+    State.baziResult = await Bazi.calculate(year, month, day, hour, minute, gender);
     renderBaziPanel(State.baziResult);
 
     // 2. 자미두수 계산 (동기)
